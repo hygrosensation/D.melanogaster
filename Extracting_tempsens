@@ -1,0 +1,22 @@
+#Extracting the temperature sensitive cells from the Sub-clustering
+#Extract clusters
+Temp_sens <- subset(x = FCA_sub, idents = c('8', '9', '11'))
+
+#Normalisation
+FCA_sub <- NormalizeData(FCA_sub, normalization.method = "LogNormalize", scale.factor = 10000)r = 10000)
+
+#Find Variable Features
+FCA_sub <- FindVariableFeatures(FCA_sub, selection.method = "vst", nfeatures = 2000)
+
+##The default is to use the variable features, which could be recommended for most cases
+
+#Scaling the data
+all.genes <- rownames(FCA_sub)
+FCA_10x <- ScaleData(FCA_sub, features = all.genes)
+
+#Perform PCA
+FCA_sub <- RunPCA(FCA_sub, features = VariableFeatures(object = FCA_sub))
+
+#Clustering
+FCA_sub <- FindNeighbors(FCA_sub, dims = 1:15)
+FCA_sub <- FindClusters(FCA_sub, resolution = 0.7)
