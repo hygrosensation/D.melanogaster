@@ -18,5 +18,5 @@ FCA_10x <- ScaleData(FCA_sub, features = all.genes)
 FCA_sub <- RunPCA(FCA_sub, features = VariableFeatures(object = FCA_sub))
 
 #Clustering
-FCA_sub <- FindNeighbors(FCA_sub, dims = 1:15)
+FCA_sub <- FindNeighbors(FCA_sub, dims = 1:10)
 FCA_sub <- FindClusters(FCA_sub, resolution = 0.7)
