@@ -1,0 +1,26 @@
+#Analyis FCA_10x Data
+#Quality control
+
+FCA_10x[["percent.mt"]] <- PercentageFeatureSet(pbmc, pattern = "^MT-")
+FCA_10x <- subset(FCA_10x, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+
+#Normalisation
+pbmc <- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)r = 10000)
+
+#Find Variable Features
+FCA_10x <- FindVariableFeatures(FCA_10x, selection.method = "vst", nfeatures = 2000)
+
+##The default is to use the variable features, which could be recommended for most cases
+
+#Scaling the data
+all.genes <- rownames(FCA_10x)
+FCA_10x <- ScaleData(FCA_10x, features = all.genes)
+
+#Perform PCA
+FCA_10x <- RunPCA(FCA_10x, features = VariableFeatures(object = FCA_10x))
+
+## Could be good to add more PC-components to capture more variation
+
+#Clustering
+FCA_10x <- FindNeighbors(FCA_10x, dims = 1:40)
+FCA_10x <- FindClusters(FCA_10x, resolution = 0.5)
