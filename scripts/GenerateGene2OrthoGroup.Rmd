@@ -54,12 +54,17 @@ library(tidyverse)
 #OG2genes %>% inner_join(ODB.OI2) -> 
 #  ODB.OI2.OG
 
+#read_tsv("~/Downloads/odb11v0_OG2genes.tab.gz",col_names = FALSE) -> OG2genes
+
+
+
+
 #write_csv(ODB.OI2.OG,gzfile('data/orthoGroups/OG.geneID.all.csv.gz'))
 
 ```
 
 ```{r}
-ODB.OI2.OG = read_csv('data/orthoGroups/OG.geneID.all.csv.gz')
+ODB.OI2.OG = read_csv('../data/orthoGroups/OG.geneID.all.csv.gz')
 
 ODB.OI2.OG %>% distinct(OG,species) %>%
   group_by( OG) %>%
@@ -83,92 +88,52 @@ ODB.OI2.OG.common %>%
   distinct(NCBI_gid)
   
 
-write_csv(ODB.OI2.OG.common,gzfile('data/orthoGroups/OG.geneID.common.csv.gz'))
-write_csv(ODB.OI2.OG,gzfile('data/orthoGroups/OG.geneID.all.csv.gz'))
-```
-
-```{r}
-species.OI2 %>% rename(OrthoDB_individual_organism_id = "X2") -> species.OI2
-
-ODB.OI2 %>% group_by(OrthoDB_individual_organism_id) %>%
-  summarise(n = n()) %>% inner_join(species.OI2) %>%
-  filter(n > 100) %>% inner_join(ODB.OI2) ->
-  ODB.OI2
-
-write_csv(ODB.OI2,"data/orthoGroups/Genes.Species.OG.csv")
-
-read_tsv("~/Downloads/odb11v0_OG2genes.tab.gz",col_names = FALSE) -> OG2genes
+write_csv(ODB.OI2.OG.common,gzfile('../data/orthoGroups/OG.geneID.common.csv.gz'))
 
 
-
-OG2genes %>% filter(X2 %in% ODB.OI2$OrthoDB_unique_gene_id) -> 
-  OG2genes.OI
-
-
-OG2genes.OI %>% rename(OrthoDB_unique_gene_id = "X2") %>%
-  rename(OrthoGroup = "X1") %>% inner_join(ODB.OI2) -> 
-  ODB.OI2.OG
-
-write_csv(ODB.OI2.OG,"data/orthoGroups/Genes.Species.OG.csv")
-
-
-ODB.OI2.OG %>% group_by(OrthoGroup) %>%
-  summarise(nrOfSpecies = length(unique(OrthoDB_individual_organism_id))) %>%
-  filter(nrOfSpecies == 3)
-
-
-ODB.OI2.OG %>% filter(synonyms == "Nlg3") -> test
-ODB.OI2.OG %>% filter(OrthoGroup %in% test$OrthoGroup)
 ```
 
 
 
+
 ```{r}
-Ants = read_csv2("data/orthoGroups/Ants.csv") %>% mutate(synonyms = gene) %>%
-  select(cluster,synonyms) %>% rename(AntsCluster = "cluster")
+Ants = read_csv2("../data/orthoGroups/Ants.csv") %>% mutate(synonyms = gene) %>%
+  select(cluster,synonyms) %>% rename(AntsCluster = "cluster") %>%
+  mutate(species = "Ooceraea biroi")
 
-Dros = read_csv2("data/orthoGroups/Droso.csv") %>% mutate(synonyms = gene) %>%
-  select(cluster,synonyms) %>% rename(FlyCluster = "cluster")
+Dros = read_csv2("../data/orthoGroups/Droso.csv") %>% mutate(synonyms = gene) %>%
+  select(cluster,synonyms) %>% rename(FlyCluster = "cluster")%>%
+  mutate(species = "Drosophila melanogaster")
 
-Mozz = read_csv2("data/orthoGroups/Mozz.csv") %>% mutate(synonyms = gene) %>%
-  select(cluster,synonyms) %>% rename(MozzCluster = "cluster")
-
-ODB.OI2.OG %>% inner_join(Mozz) %>% filter(X3 == "Aedes aegypti") %>%
-  select(OrthoGroup,MozzCluster) -> ODB.OI2.OG.Mozz
-
-ODB.OI2.OG %>% inner_join(Ants) %>% filter(X3 == "Ooceraea biroi") %>%
-  select(OrthoGroup,AntsCluster) -> ODB.OI2.OG.Ants
-
-ODB.OI2.OG %>% inner_join(Dros) %>% filter(X3 == "Drosophila melanogaster") %>%
-  select(OrthoGroup,FlyCluster) -> ODB.OI2.OG.Fly
+Mozz = read_csv2("../data/orthoGroups/Mozz.csv") %>% mutate(synonyms = gene) %>%
+  select(cluster,synonyms) %>% rename(MozzCluster = "cluster")%>%
+  mutate(species = "Aedes aegypti")
 
 
+ODB.OI2.OG.common %>%
+  inner_join(Dros) %>%
+  filter(FlyCluster %in% c(18,36,47)) %>%
+  distinct(OG) %>% 
+  inner_join(ODB.OI2.OG.common) %>%
+  filter(species == "Ooceraea biroi") %>%
+  distinct(synonyms,species) %>%
+  inner_join(Ants) %>%
+  group_by(species,AntsCluster) %>%
+  summarise(n = n()) %>%
+  arrange(-n)
+  
+ODB.OI2.OG.common %>%
+  inner_join(Dros) %>%
+  filter(FlyCluster %in% c(18,36,47)) %>%
+  distinct(OG) %>% 
+  inner_join(ODB.OI2.OG.common) %>%
+  filter(species == "Aedes aegypti") %>%
+  distinct(synonyms,species) %>%
+  inner_join(Mozz) %>%
+  group_by(species,MozzCluster) %>%
+  summarise(n = n()) %>%
+  arrange(-n)
 
-
-ODB.OI2.OG.Fly %>% inner_join(ODB.OI2.OG.Mozz) %>% distinct(OrthoGroup)-> common
-
-%>% inner_join(ODB.OI2.OG.Ants) -> common
-
-common %>% distinct(OrthoGroup) %>% inner_join(ODB.OI2.OG) %>% inner_join(Dros)%>% 
-  filter(X3 == "Drosophila melanogaster") %>% filter(FlyCluster %in% c(18,36,47)) %>%
-  left_join(Mozz)
-
-
-  select(OrthoGroup,OrthoDB_unique_gene_id,X3,synonyms,NCBI_gid,description,AntsCluster,FlyCluster,MozzCluster)->
-  ODB.OI2.OG.cluster
-
-ODB.OI2.OG
-
-
-ODB.OI2.OG.cluster %>% filter(!is.na(FlyCluster) & !is.na(MozzCluster))  %>%
-  select(X3,synonyms) %>% distinct() %>% arrange(X3)
-
-
-
-ODB.OI2.OG %>%
-  inner_join(Dros) %>% 
-  filter(X3 == "Drosophila melanogaster") %>%
-  select(OrthoGroup,FlyCluster) -> ODB.OI2.OG.Fly
 
 
 ```
